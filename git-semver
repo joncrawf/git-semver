@@ -1,20 +1,28 @@
 #!/bin/bash
 
-increment_value ()
-{
+usage() {
+  echo "usage: git semver <subcommand>"
+  echo
+  echo "Wraps the git-tag command."
+  echo
+  echo "Additional subcommands are:"
+  echo "   --major   Increase the version by a major increment."
+  echo "   --minor   Increase the version by a minor increment."
+  echo "   --patch   Increase the version by a patch increment."
+}
+
+increment_value () {
   echo $(($1+1))
 }
 
-return_v_if_it_is_contained ()
-{
+return_v_if_it_is_contained () {
   if [[ $1 == *"v"* ]]
   then
     echo "v"
   fi
 }
 
-increase_version ()
-{
+increase_version () {
   local index=$2
   local current_version=$(echo $1 | awk -F"." '{print $'$index'}')
 
@@ -24,35 +32,44 @@ increase_version ()
   echo "$v$(echo $1 | awk -F"." -v OFS=. '{$'$index'='$next_version'; print }')"
 }
 
-last_tag=$(git describe --abbrev=0)
+main () {
+  if [ $# -lt 1 ]; then
+    usage
+    exit 1
+  fi
 
-if [[ $last_tag =~ ^v{0,1}[0-9]+.[0-9]+.[0-9]+$ ]]
-then
-  version=$last_tag
-else
-  while true; do
-    read -p "Version not set or not the correct format. Set it to 0.0.1 (y) or exit (n)?" yn
-    case $yn in
-      [Yy]* ) version="0.0.0" ; break;;
-      [Nn]* ) exit;;
-          * ) echo "Please answer yes or no.";;
+  last_tag=$(git describe --abbrev=0)
+
+  if [[ $last_tag =~ ^v{0,1}[0-9]+.[0-9]+.[0-9]+$ ]]
+  then
+    version=$last_tag
+  else
+    while true; do
+      read -p "Version not set or not the correct format. Set it to 0.0.1 (y) or exit (n)?" yn
+      case $yn in
+        [Yy]* ) version="0.0.0" ; break;;
+        [Nn]* ) exit;;
+            * ) echo "Please answer yes or no.";;
+      esac
+    done
+  fi
+
+  echo "current version:" $version
+
+  commands=()
+
+  for i in "$@"
+  do
+    case "$i" in
+      --patch) commands+=("-a") ; version=$(increase_version $version 3) ; commands+=("$version") ;;
+      --minor) commands+=("-a") ; version=$(increase_version $version 2) ; commands+=("$version") ;;
+      --major) commands+=("-a") ; version=$(increase_version $version 1) ; commands+=("$version") ;;
+      *) commands+=("$i") ;;
     esac
   done
-fi
 
-echo "current version:" $version
+  echo "new version:" $version
+  git tag "${commands[@]}"
+}
 
-commands=()
-
-for i in "$@"
-do
-  case "$i" in
-    --patch) commands+=("-a") ; version=$(increase_version $version 3) ; commands+=("$version") ;;
-    --minor) commands+=("-a") ; version=$(increase_version $version 2) ; commands+=("$version") ;;
-    --major) commands+=("-a") ; version=$(increase_version $version 1) ; commands+=("$version") ;;
-    *) commands+=("$i") ;;
-  esac
-done
-
-echo "new version:" $version
-git tag "${commands[@]}"
+main "$@"
