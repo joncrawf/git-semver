@@ -23,13 +23,19 @@ return_v_if_it_is_contained () {
 }
 
 increase_version () {
+  local version=$1
   local index=$2
-  local current_version=$(echo $1 | awk -F"." '{print $'$index'}')
+  local current_version=$(echo $version | awk -F"." '{print $'$index'}')
 
   local v=$(return_v_if_it_is_contained $current_version)
   current_version=${current_version/v}
   local next_version=$(increment_value $current_version $v)
-  echo "$v$(echo $1 | awk -F"." -v OFS=. '{$'$index'='$next_version'; print }')"
+  version="$(echo $1 | awk -F"." -v OFS=. '{$'$index'='$next_version'; print }')"
+
+  for ((i = $index+1; i <= 3; i++)); do
+    version="$(echo $version | awk -F"." -v OFS=. '{$'$i'='0'; print }')"
+  done
+  echo $v$version
 }
 
 main () {
