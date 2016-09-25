@@ -6,15 +6,15 @@ Git command for semantically versioning tags (a wrapper around the tag command)
 
 To increase the version by a major:
 ```
-git semver --major -m "message"
+git semver --break -m "message"
 ```
 
 To increase the version by a minor:
 ```
-git semver --minor -m "message"
+git semver --feature -m "message"
 ```
 
 To increase the version by a patche:
 ```
-git semver --patch -m "message"
+git semver --fix -m "message"
 ```
